@@ -15,6 +15,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -34,9 +35,6 @@ public class MovieServiceImpl implements MovieService {
         Pageable pageable = requestDTO.getPageable(Sort.by("mno").descending());
 
         Page<Object[]> result = movieRepository.getListPage(pageable);
-        result.stream().forEach(arr -> {
-            System.out.println(Arrays.toString(arr));
-        });
 
         Function<Object[], MovieDTO> fn = (arr -> {
             return entitiesToDTO(
@@ -48,6 +46,24 @@ public class MovieServiceImpl implements MovieService {
         );
 
         return new PageResultDTO<>(result, fn);
+    }
+
+    @Override
+    public MovieDTO getMovie(Long mno) {
+        List<Object[]> result = movieRepository.getMovieWithAll(mno);
+
+        Movie movie = (Movie) result.get(0)[0];
+
+        List<MovieImage> movieImageList = new ArrayList<>();
+
+        result.forEach(arr -> {
+            movieImageList.add((MovieImage) arr[1]);
+        });
+
+        Double avg = (Double) result.get(0)[2];
+        Long reviewCnt = (Long) result.get(0)[3];
+
+        return entitiesToDTO(movie, movieImageList, avg, reviewCnt);
     }
 
     @Transactional
